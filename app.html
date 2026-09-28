@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PrintMath - 3D Printing Filament Math That Holds Up</title>
+<meta name="description" content="Grams-to-meters by material, true print cost with power and failure rate, spool tracking, and prints per spool - honest numbers for the 3D printing desk.">
+<link rel="canonical" href="https://ilanis-agent.github.io/printmath/">
+<meta property="og:title" content="PrintMath - 3D Printing Filament Math That Holds Up">
+<meta property="og:description" content="Grams-to-meters by material, true print cost with power and failure rate, spool tracking, and prints per spool - honest numbers for the 3D printing desk.">
+<meta property="og:url" content="https://ilanis-agent.github.io/printmath/">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary">
+<meta name="theme-color" content="#7a3a10">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='0.9em' font-size='90'%3E%F0%9F%96%A8%3C/text%3E%3C/svg%3E">
+<style>
+:root{
+  --bg:#1d1410; --card:#281b14; --ink:#f5ece2; --muted:#c2a98f;
+  --accent:#e8873a; --accent2:#f2c14e; --line:#4d3626; --good:#8fd18a; --warn:#f2c14e; --bad:#e86a5a;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--ink);font:16px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;padding:1rem}
+.wrap{max-width:760px;margin:0 auto}
+header{text-align:center;padding:1.6rem 0 1.2rem}
+h1{font-size:2.1rem;color:var(--accent2);letter-spacing:.5px}
+.tag{color:var(--muted);margin-top:.3rem;font-size:.98rem}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:1.1rem 1.2rem;margin:1rem 0}
+.card h2{font-size:1.05rem;color:var(--accent);margin-bottom:.7rem}
+.row{display:flex;flex-wrap:wrap;gap:.9rem;align-items:flex-end;margin:.5rem 0}
+.field{display:flex;flex-direction:column;gap:.25rem}
+label{font-size:.8rem;color:var(--muted)}
+input,select{background:#1a110c;color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:.45rem .6rem;font-size:1rem;width:8.5rem}
+input:focus,select:focus{outline:2px solid var(--accent)}
+button{background:var(--accent);color:#1d1410;border:0;border-radius:8px;padding:.5rem 1.1rem;font-size:.95rem;font-weight:700;cursor:pointer}
+button:hover{background:#f09a55}
+.presets{display:flex;flex-wrap:wrap;gap:.5rem;margin:.6rem 0 .2rem}
+.presets button{background:transparent;border:1px solid var(--line);color:var(--muted);font-weight:400;padding:.35rem .8rem;font-size:.85rem}
+.presets button:hover{border-color:var(--accent);color:var(--ink)}
+.big{font-size:1.3rem;font-weight:700;color:var(--accent2)}
+.result{margin-top:.6rem;font-size:1rem;min-height:1.4rem}
+.result small{color:var(--muted);display:block;margin-top:.25rem}
+.verdict-ok{color:var(--good)} .verdict-tight{color:var(--warn)} .verdict-bad{color:var(--bad)}
+.era{font-size:.85rem;color:var(--muted);margin-bottom:.6rem;font-style:italic}
+footer{margin:2rem 0 1rem;font-size:.8rem;color:var(--muted);border-top:1px solid var(--line);padding-top:1rem}
+footer code{color:var(--accent)}
+details{margin-top:.4rem} summary{cursor:pointer;color:var(--muted);font-size:.85rem}
+table{border-collapse:collapse;margin-top:.5rem;font-size:.9rem}
+td,th{border:1px solid var(--line);padding:.3rem .6rem;text-align:left}
+th{color:var(--accent)}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+<h1>&#128424; PrintMath</h1>
+<p class="tag">3D printing filament math that holds up. Real print cost, spool truth - numbers you can quote a print on.</p>
+</header>
+
+<section class="card" id="c-convert">
+<h2>Meters to grams</h2>
+<p class="era">Your slicer says meters, the spool says grams. Convert by material - 1.75mm filament, honest densities.</p>
+<div class="row">
+  <div class="field"><label for="in-mat">material</label>
+    <select id="in-mat">
+      <option value="pla">PLA</option>
+      <option value="petg">PETG</option>
+      <option value="abs">ABS</option>
+      <option value="asa">ASA</option>
+      <option value="tpu">TPU</option>
+    </select>
+  </div>
+  <div class="field"><label for="in-meters">slicer length (m)</label><input id="in-meters" type="number" min="0.1" step="0.1" value="15"></div>
+</div>
+<button id="btn-convert">Convert</button>
+<div class="result" id="out-convert"></div>
+</section>
+
+<section class="card" id="c-cost">
+<h2>True print cost</h2>
+<p class="era">Filament plus electricity, scaled by your failure rate. The number you should actually quote.</p>
+<div class="presets" id="presets-cost"></div>
+<div class="row">
+  <div class="field"><label for="in-grams">print weight (g)</label><input id="in-grams" type="number" min="1" step="1" value="45"></div>
+  <div class="field"><label for="in-price">spool price ($/kg)</label><input id="in-price" type="number" min="5" step="1" value="25"></div>
+  <div class="field"><label for="in-hours">print time (h)</label><input id="in-hours" type="number" min="0.25" step="0.25" value="5"></div>
+  <div class="field"><label for="in-watts">printer draw (W)</label><input id="in-watts" type="number" min="30" step="10" value="150"></div>
+  <div class="field"><label for="in-rate">power rate ($/kWh)</label><input id="in-rate" type="number" min="0.05" step="0.01" value="0.15"></div>
+  <div class="field"><label for="in-fail">failure rate (%)</label><input id="in-fail" type="number" min="0" max="50" step="5" value="10"></div>
+</div>
+<button id="btn-cost">Cost math</button>
+<div class="result" id="out-cost"></div>
+</section>
+
+<section class="card" id="c-spool">
+<h2>Spool tracker</h2>
+<p class="era">How much is really left on the spool, and how many more of this print it can carry.</p>
+<div class="row">
+  <div class="field"><label for="in-spool">spool size (g)</label><input id="in-spool" type="number" min="100" step="100" value="1000"></div>
+  <div class="field"><label for="in-used">used so far (g)</label><input id="in-used" type="number" min="0" step="10" value="250"></div>
+  <div class="field"><label for="in-perprint">this print (g)</label><input id="in-perprint" type="number" min="1" step="1" value="45"></div>
+</div>
+<button id="btn-spool">Spool math</button>
+<div class="result" id="out-spool"></div>
+</section>
+
+<section class="card" id="c-mat">
+<h2>Material card</h2>
+<p class="era">Density, grams per meter, and the handling truth for each common filament.</p>
+<div class="row">
+  <div class="field"><label for="in-mat2">material</label>
+    <select id="in-mat2">
+      <option value="pla">PLA</option>
+      <option value="petg">PETG</option>
+      <option value="abs">ABS</option>
+      <option value="asa">ASA</option>
+      <option value="tpu">TPU</option>
+    </select>
+  </div>
+</div>
+<button id="btn-mat">Material card</button>
+<div class="result" id="out-mat"></div>
+</section>
+
+<section class="card" id="c-why">
+<h2>Why these numbers</h2>
+<details><summary>The assumptions, stated honestly</summary>
+<table>
+<tr><th>Constant</th><th>Value</th><th>Why</th></tr>
+<tr><td>Filament geometry</td><td>2.4053 cm3 per meter</td><td>1.75mm diameter, solid round - geometry, not opinion</td></tr>
+<tr><td>Densities</td><td>PLA 1.24, PETG 1.27, ABS 1.04 g/cm3</td><td>Published material densities; grams per meter follows</td></tr>
+<tr><td>Printer draw</td><td>~150W typical</td><td>Bed heater dominates on long prints; small printers pull less</td></tr>
+<tr><td>Failure rate</td><td>your honest %</td><td>Spaghetti happens. Scaling cost by failures is the quote that survives reality</td></tr>
+</table>
+<p style="margin-top:.5rem;color:var(--muted);font-size:.85rem">Wear, nozzles and your time are not priced in. The math covers what melts and what spins the meter.</p>
+</details>
+</section>
+
+<footer>
+<p><strong>PrintMath</strong> - part of the App Factory collection. Honest small tools, one good idea at a time.</p>
+<p>Source: <code>engine.js</code> (pure functions, tested in CI) &middot; <code>app.html</code> (this UI) &middot; <code>README.md</code></p>
+</footer>
+</div>
+
+<script src="engine.js"></script>
+<script>
+(function () {
+  function $(id) { return document.getElementById(id); }
+  function num(id) { return parseFloat($(id).value) || 0; }
+  function esc(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;'); }
+
+  $('btn-convert').addEventListener('click', function () {
+    var mat = $('in-mat').value, m = num('in-meters');
+    var g = PrintEngine.gramsFromMeters(m, mat);
+    var gpm = PrintEngine.gramsPerMeter(mat);
+    $('out-convert').innerHTML =
+      m + ' m of ' + mat.toUpperCase() + ' is <span class="big">' + g + ' g</span> (' + gpm + ' g/m).' +
+      '<small>Going the other way: 100 g of ' + mat.toUpperCase() + ' is ' + PrintEngine.metersFromGrams(100, mat) + ' m.</small>';
+  });
+
+  $('btn-cost').addEventListener('click', function () {
+    var grams = num('in-grams'), price = num('in-price'), hours = num('in-hours');
+    var watts = num('in-watts'), rate = num('in-rate'), fail = num('in-fail');
+    var fil = PrintEngine.filamentCost(grams, price);
+    var elec = PrintEngine.electricityCost(hours, watts, rate);
+    var total = PrintEngine.truePrintCost(grams, price, hours, watts, rate, fail);
+    $('out-cost').innerHTML =
+      'Filament $' + fil.toFixed(2) + ' + power $' + elec.toFixed(2) + ', scaled for ' + fail + '% failures: ' +
+      '<span class="big">$' + total.toFixed(2) + ' per print</span>.' +
+      '<small>Failure rate is the honesty knob - if one print in ten spaghettis, that is 10%.</small>';
+  });
+
+  $('btn-spool').addEventListener('click', function () {
+    var spool = num('in-spool'), used = num('in-used'), per = num('in-perprint');
+    var pct = PrintEngine.spoolRemainingPct(spool, used);
+    var left = Math.max(0, spool - used);
+    var prints = PrintEngine.printsPerSpool(left, per);
+    var v = PrintEngine.spoolVerdict(pct);
+    var cls = /plenty/.test(v) ? 'verdict-ok' : (/halfway|low/.test(v) ? 'verdict-tight' : 'verdict-bad');
+    $('out-spool').innerHTML =
+      '<span class="big">' + pct + '% left</span> - about ' + left + ' g. ' +
+      'At ' + per + ' g per print that is <span class="big">' + prints + ' more prints</span>.<br>' +
+      '<span class="' + cls + '">' + esc(v) + '</span>' +
+      '<small>Weigh the spool and subtract the empty-spool weight for the truth - most empties run 120-140 g.</small>';
+  });
+
+  $('btn-mat').addEventListener('click', function () {
+    var mat = $('in-mat2').value;
+    var d = PrintEngine.DENSITIES[mat];
+    var g = PrintEngine.gramsPerMeter(mat);
+    $('out-mat').innerHTML =
+      '<table><tr><th>Material</th><th>Density</th><th>Grams / meter</th></tr>' +
+      '<tr><td>' + mat.toUpperCase() + '</td><td>' + d + ' g/cm3</td><td>' + g + '</td></tr></table>' +
+      '<small>' + esc(PrintEngine.materialNote(mat)) + '</small>';
+  });
+
+  var presets = [['Benchy', 13, 1.5], ['Phone stand', 45, 5], ['Helmet', 400, 30]];
+  var holder = $('presets-cost');
+  presets.forEach(function (p) {
+    var b = document.createElement('button');
+    b.textContent = p[0] + ' (' + p[1] + 'g)';
+    b.addEventListener('click', function () { $('in-grams').value = p[1]; $('in-hours').value = p[2]; $('btn-cost').click(); });
+    holder.appendChild(b);
+  });
+
+  $('btn-convert').click();
+  $('btn-cost').click();
+  $('btn-spool').click();
+  $('btn-mat').click();
+})();
+</script>
+</body>
+</html>
